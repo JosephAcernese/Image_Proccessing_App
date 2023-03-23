@@ -1,12 +1,13 @@
 from PIL import Image as PILImage
 import pdb
+from math import floor, ceil
 
 # ### Part 1
 # - [x] Crop an image
 # - [x] Flip image horizontally
 # - [x] Flip image vertically
 # - [] Scale image
-#     - [] Nearest Neighbour
+#     - [x] Nearest Neighbour
 #     - [] Bilinear
 #     - [] Bicubic
 # - [] Rotate image (Nearest Neighbour)
@@ -128,15 +129,44 @@ class Image:
         self.copy_info(new_image)
 
 
+
+    def scale_nearest_neighbour(self,x_factor,y_factor):
+
+        new_height = floor(y_factor * self.height)
+        new_width = floor(x_factor * self.width)
+
+        new_image = Image(height = new_height, width = new_width)
+
+        for i in range(new_image.width):
+            for j in range(new_image.height):
+
+                x = i/x_factor
+                y = j/y_factor
+
+                round(x)
+                round(y)
+
+                if(y >= self.height):
+                    y = self.height - 1
+                
+                if(x >= self.width):
+                    x = self.width - 1
+
+                new_image.set_pixel(i,j,self.get_pixel(x,y))
+
+        self.copy_info(new_image)
+
+    def scale_bilinear(self,x_factor,y_factor)
+
+
     
-    
 
 
 
-temp = Image(fileName = "./car.jpeg",padding = zero_padding)
+temp = Image(fileName = "./car.jpeg",padding = reflected_padding)
 
 
-temp.crop(-100,-100,300,300)
+temp.scale_nearest_neighbour(10,1)
 
 
 temp.image.show()
