@@ -1,6 +1,8 @@
 from PIL import Image as PILImage
 import pdb
 from math import floor, ceil
+import statistics
+
 
 # ### Part 1
 # - [x] Crop an image
@@ -8,7 +10,7 @@ from math import floor, ceil
 # - [x] Flip image vertically
 # - [] Scale image
 #     - [x] Nearest Neighbour
-#     - [] Bilinear
+#     - [x] Bilinear
 #     - [] Bicubic
 # - [] Rotate image (Nearest Neighbour)
 
@@ -22,7 +24,9 @@ from math import floor, ceil
 # - [ ] Calculate convolution of a rectangular kernel with zero padding
 # - [ ] Linear filtering
 # - [ ] Non-linear filtering
-# - [ ] Min, max, median filtering
+#   - [x] Min 
+#   - [x] max 
+#   - [ ] median filtering
 
 def zero_padding(x,y,img):
 
@@ -82,6 +86,11 @@ class Image:
     def set_pixel(self,x,y,pixel_intensity):
         self.pixels[x,y] = pixel_intensity
 
+    def set_pixel_color(self,x,y,pixel_intensity,i):
+        temp = list(self.pixels[x,y])
+        temp[i] = pixel_intensity
+        self.pixels[x,y] = tuple(temp)
+
     def copy_blank(self):
         new_image = Image(height = self.height, width = self.width)
         return new_image
@@ -93,7 +102,6 @@ class Image:
         self.width = new.width
         self.pixels = new.pixels
         self.padding = new.padding
-
 
     def flip_horizontally(self):
 
@@ -128,8 +136,6 @@ class Image:
 
         self.copy_info(new_image)
 
-
-
     def scale_nearest_neighbour(self,x_factor,y_factor):
 
         new_height = floor(y_factor * self.height)
@@ -156,17 +162,141 @@ class Image:
 
         self.copy_info(new_image)
 
-    def scale_bilinear(self,x_factor,y_factor)
+    def scale_bilinear(self,x_factor,y_factor):
 
+        new_height = floor(y_factor * self.height)
+        new_width = floor(x_factor * self.width)
 
+        new_image = Image(height = new_height, width = new_width)
+
+        for i in range(new_image.width):
+            for j in range(new_image.height):
+
+                x = i / x_factor
+                y = j / y_factor
+
+                x2 = ceil(x)
+                x1 = floor(x)
+                y2 = ceil(y)
+                y1 = floor(y)
+
+                wx = (x-x1)
+                wy = (y - y1)
+
+                for k in range(len(self.image.mode)):
+                    
+                    X = self.get_pixel(x1,y1)[k] * ( 1 - wx) +  self.get_pixel(x2,y1)[k] * wx
+                    Y = self.get_pixel(x1,y2)[k] * ( 1 - wx) +  self.get_pixel(x2,y2)[k] * wx
+
+                    Z = X*(1 - wy) + Y*(wy)
+
+                    
+
+                    Z = round(Z)
+
+                    new_image.set_pixel_color(i,j,Z,k)
+
+        self.copy_info(new_image)
     
+    def filter_max(self,x,y):
 
+        temp_image = self.copy_blank()
+
+        for i in range(self.width):
+            for j in range(self.height):
+
+                max = 0
+                for element in self.get_pixel(i,j):
+                    max+=element
+                
+                max_tuple = self.get_pixel(i,j)
+
+                for k in range(floor(-x/2), ceil(x/2)):
+                    for l in range(floor(-y/2),ceil(y/2)):
+
+                        temp = 0
+                        temp_tuple = self.get_pixel(i+k,j+l)
+
+                        for element in temp_tuple:
+                            temp+=element
+
+                        if temp > max:
+                            max = temp
+                            max_tuple = temp_tuple
+                
+                temp_image.set_pixel(i,j,max_tuple)
+
+        self.copy_info(temp_image)
+        
+    def filter_min(self,x,y):
+
+        temp_image = self.copy_blank()
+
+        for i in range(self.width):
+            for j in range(self.height):
+
+                min = 0
+                for element in self.get_pixel(i,j):
+                    min+=element
+                
+                min_tuple = self.get_pixel(i,j)
+
+                for k in range(floor(-x/2), ceil(x/2)):
+                    for l in range(floor(-y/2),ceil(y/2)):
+
+                        temp = 0
+                        temp_tuple = self.get_pixel(i+k,j+l)
+
+                        for element in temp_tuple:
+                            temp+=element
+
+                        if temp < min:
+                            min = temp
+                            min_tuple = temp_tuple
+                
+                temp_image.set_pixel(i,j,min_tuple)
+
+        self.copy_info(temp_image)
+
+    def filter_median(self,x,y):
+
+        temp_image = self.copy_blank()
+
+        for i in range(self.width):
+            for j in range(self.height):
+
+                min = 0
+                for element in self.get_pixel(i,j):
+                    min+=element
+                
+                min_tuple = self.get_pixel(i,j)
+
+                for k in range(floor(-x/2), ceil(x/2)):
+                    for l in range(floor(-y/2),ceil(y/2)):
+
+                        temp = 0
+                        temp_tuple = self.get_pixel(i+k,j+l)
+
+                        for element in temp_tuple:
+                            temp+=element
+
+                        if temp < min:
+                            min = temp
+                            min_tuple = temp_tuple
+                
+                temp_image.set_pixel(i,j,min_tuple)
+
+        self.copy_info(temp_image)
+                        
+        
 
 
 temp = Image(fileName = "./car.jpeg",padding = reflected_padding)
 
 
-temp.scale_nearest_neighbour(10,1)
+#temp.scale_nearest_neighbour(0.19,0.19)
+#temp.scale_bilinear(0.19,0.19)
+temp.filter_min(10,10)
 
 
 temp.image.show()
