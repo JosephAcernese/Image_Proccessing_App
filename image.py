@@ -2,7 +2,7 @@ from PIL import Image as PILImage
 import pdb
 from math import floor, ceil
 import statistics
-
+from kernel import Kernel
 
 # ### Part 1
 # - [x] Crop an image
@@ -15,18 +15,23 @@ import statistics
 # - [] Rotate image (Nearest Neighbour)
 
 # ### Part 2
-# - [] Linear grey level mappings
-# - [] Power law grey level mappings
+# - [X] Linear grey level mappings
+# - [?] Power law grey level mappings
 # - [] Histogram calculation
 # - [] Histogram equalization
 
 # ### Part 3+4
-# - [ ] Calculate convolution of a rectangular kernel with zero padding
-# - [ ] Linear filtering
-# - [ ] Non-linear filtering
+# - [X] Calculate convolution of a rectangular kernel with zero padding
+# - [?g] Linear filtering
+# - [X] Non-linear filtering
 #   - [x] Min 
 #   - [x] max 
-#   - [ ] median filtering
+#   - [X] median filtering
+
+# ### Bonus
+# - [X] Negatives
+# - [X] Circular Padding
+# - [X] Reflected padding
 
 def zero_padding(x,y,img):
 
@@ -55,7 +60,6 @@ def reflected_padding(x,y,img):
 
     return img.pixels[x,y]
 
-
 class Image:
 
     def __init__(self, fileName=None, padding=zero_padding, height = None, width = None):
@@ -77,8 +81,6 @@ class Image:
             console.log("Shouldnt be here")
         
         self.padding = padding
-
-
 
     def get_pixel(self, x, y):
         return self.padding(x, y, self)
@@ -265,39 +267,101 @@ class Image:
         for i in range(self.width):
             for j in range(self.height):
 
-                min = 0
-                for element in self.get_pixel(i,j):
-                    min+=element
+                tuple_list = []
                 
-                min_tuple = self.get_pixel(i,j)
-
                 for k in range(floor(-x/2), ceil(x/2)):
                     for l in range(floor(-y/2),ceil(y/2)):
 
-                        temp = 0
-                        temp_tuple = self.get_pixel(i+k,j+l)
-
-                        for element in temp_tuple:
-                            temp+=element
-
-                        if temp < min:
-                            min = temp
-                            min_tuple = temp_tuple
+                        tuple_list.append(self.get_pixel(i+k,j+l))
                 
-                temp_image.set_pixel(i,j,min_tuple)
+                new_pixel = ()
+
+                for k in range(len(self.image.mode)):
+
+                    median_list = []
+
+                    for element in tuple_list:
+                        median_list.append(element[k])
+
+                    temp_tup = (floor(statistics.median(median_list)),)
+
+                    new_pixel = new_pixel + temp_tup
+
+
+                temp_image.set_pixel(i,j,new_pixel)
+                
 
         self.copy_info(temp_image)
                         
-        
+    def power_mapping(self,c,p):
 
+        temp_image = self.copy_blank()
+     
+        for i in range(self.width):
+            for j in range(self.height):
 
-temp = Image(fileName = "./car.jpeg",padding = reflected_padding)
+                new_pixel = ()
+
+                for element in self.get_pixel(i,j):
+
+                    temp_tuple = (floor(pow(element, p) * c),)
+                    new_pixel = new_pixel + temp_tuple
+                
+                temp_image.set_pixel(i,j,new_pixel)   
+
+        self.copy_info(temp_image)
+
+    def linear_mapping(self,a,b):
+
+        temp_image = self.copy_blank()
+     
+        for i in range(self.width):
+            for j in range(self.height):
+
+                new_pixel = ()
+
+                for element in self.get_pixel(i,j):
+
+                    temp_tuple = (floor(element * a + b),)
+                    new_pixel = new_pixel + temp_tuple
+                
+                temp_image.set_pixel(i,j,new_pixel)   
+
+        self.copy_info(temp_image)
+
+    def negative(self):
+
+        temp_image = self.copy_blank()
+
+        for i in range(self.width):
+            for j in range(self.height):
+
+                new_pixel = ()
+
+                for element in self.get_pixel(i,j):
+
+                    temp_tuple = (255-element,)
+                    new_pixel = new_pixel + temp_tuple
+                
+                temp_image.set_pixel(i,j,new_pixel)
+
+        self.copy_info(temp_image)
+
+temp = Image(fileName = "./bram.png",padding = reflected_padding)
 
 
 #temp.scale_nearest_neighbour(0.19,0.19)
 #temp.scale_bilinear(0.19,0.19)
-temp.filter_min(10,10)
+#temp.negative()
+#temp.power_mapping(1,0.5)
+#temp.filter_median(5,5)
 
+
+array = [[-1,-1,-1],[0,0,0],[1,1,1]]
+
+kernel = Kernel(array)
+
+kernel.convulve(temp)
 
 temp.image.show()
 
