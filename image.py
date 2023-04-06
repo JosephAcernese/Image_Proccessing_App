@@ -16,13 +16,13 @@ from kernel import Kernel
 
 # ### Part 2
 # - [X] Linear grey level mappings
-# - [X] Power law grey level mappings
+# - [?] Power law grey level mappings
 # - [] Histogram calculation
 # - [] Histogram equalization
 
 # ### Part 3+4
 # - [X] Calculate convolution of a rectangular kernel with zero padding
-# - [X] Linear filtering
+# - [?g] Linear filtering
 # - [X] Non-linear filtering
 #   - [x] Min 
 #   - [x] max 
@@ -347,29 +347,51 @@ class Image:
 
         self.copy_info(temp_image)
 
-    # def get_histogram(self):
+
+    def get_histogram(self):
+
+        histograms = []
+
+        for char in self.image.mode:
+
+            temp_histogram = {}
+            histograms.append(temp_histogram)
+
+            
+        for k in range(len(histograms)):
+
+            for i in range(self.width):
+                for j in range(self.height):
+                        
+                    intensity = self.get_pixel(i,j)[k]
+
+                    if intensity in histograms[k]:
+                        histograms[k][intensity]+= 1 
+
+                    else:
+                        histograms[k][intensity] = 1
+
+        return histograms
 
 
-
-
-temp = Image(fileName = "./bram.png",padding = reflected_padding)
+temp = Image(fileName = "./car.jpeg",padding = reflected_padding)
 
 
 #temp.scale_nearest_neighbour(0.19,0.19)
-#temp.scale_bilinear(5,5)
+#temp.scale_bilinear(0.19,0.19)
+#temp.negative()
 #temp.power_mapping(1,0.5)
 #temp.filter_median(5,5)
 
+histograms = temp.get_histogram()
+print(histograms)
 
-array = [[1,0,-1],[1,0,-1],[1,0,-1]]
+
+array = [[-1,-1,-1],[0,0,0],[1,1,1]]
 
 kernel = Kernel(array)
 
-#kernel.convulve(temp)
-
-#temp.filter_median(3,3)
-
-temp.crop(300,300,0,0)
+kernel.convulve(temp)
 
 temp.image.show()
 

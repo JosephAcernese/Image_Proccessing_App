@@ -14,7 +14,7 @@ class Kernel:
     def convulve(self,image):
 
         temp_image = image.copy_blank()
-        mid_height = floor(self.height/2)
+        mid_height = ceil(self.height/2)
         mid_width = floor(self.width/2)
 
         for i in range(image.width):
