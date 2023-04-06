@@ -17,12 +17,12 @@ from kernel import Kernel
 # ### Part 2
 # - [X] Linear grey level mappings
 # - [?] Power law grey level mappings
-# - [] Histogram calculation
-# - [] Histogram equalization
+# - [X] Histogram calculation
+# - [X] Histogram equalization
 
 # ### Part 3+4
 # - [X] Calculate convolution of a rectangular kernel with zero padding
-# - [?g] Linear filtering
+# - [X] Linear filtering
 # - [X] Non-linear filtering
 #   - [x] Min 
 #   - [x] max 
@@ -76,9 +76,6 @@ class Image:
             self.pixels = self.image.load()
             self.width = width
             self.height = height
-
-        else:
-            console.log("Shouldnt be here")
         
         self.padding = padding
 
@@ -373,8 +370,61 @@ class Image:
 
         return histograms
 
+    def equalize_histogram(self):
 
-temp = Image(fileName = "./car.jpeg",padding = reflected_padding)
+        histograms = self.get_histogram()
+        pixel_count = self.height * self.width
+        
+        new_values = []
+
+        for i in range(len(histograms)):
+
+            pdf = []
+
+            for j in range(256):
+
+                if j in histograms[i]:
+                    pdf.append(histograms[i][j]/pixel_count)
+
+                else:
+                    pdf.append(0)
+
+
+            cdf = []
+            for j in range(len(pdf)):
+                
+                temp = 0
+
+                if(j != 0):
+                    temp+= cdf[j-1]
+
+                temp+=pdf[j]
+
+                cdf.append(temp)
+
+            sk = []
+
+            for j in range(len(cdf)):
+                sk.append(ceil(cdf[j] * 255))
+
+            new_values.append(sk)
+
+        for i in range(self.width):
+            for j in range(self.height):
+
+                old_pixel = self.get_pixel(i,j)
+                new_pixel = ()
+
+                for k in range(len(old_pixel)):
+                    new_pixel+=(new_values[k][old_pixel[k]],)
+
+                self.set_pixel(i,j,new_pixel)
+
+
+
+
+
+temp = Image(fileName = "./sam.jpg",padding = reflected_padding)
 
 
 #temp.scale_nearest_neighbour(0.19,0.19)
@@ -382,16 +432,17 @@ temp = Image(fileName = "./car.jpeg",padding = reflected_padding)
 #temp.negative()
 #temp.power_mapping(1,0.5)
 #temp.filter_median(5,5)
+temp.negative()
 
-histograms = temp.get_histogram()
-print(histograms)
+temp.equalize_histogram()
 
 
 array = [[-1,-1,-1],[0,0,0],[1,1,1]]
 
 kernel = Kernel(array)
 
-kernel.convulve(temp)
+#kernel.convulve(temp)
+
 
 temp.image.show()
 
