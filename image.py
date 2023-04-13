@@ -12,11 +12,10 @@ from kernel import Kernel
 #     - [x] Nearest Neighbour
 #     - [x] Bilinear
 #     - [] Bicubic
-# - [] Rotate image (Nearest Neighbour)
 
 # ### Part 2
 # - [X] Linear grey level mappings
-# - [?] Power law grey level mappings
+# - [X] Power law grey level mappings
 # - [X] Histogram calculation
 # - [X] Histogram equalization
 
@@ -32,68 +31,108 @@ from kernel import Kernel
 # - [X] Negatives
 # - [X] Circular Padding
 # - [X] Reflected padding
+# - [] Rotate image (Nearest Neighbour)
 
+
+#Zero padding function
 def zero_padding(x,y,img):
 
+    #If the index is out of range of the image
     if (x < 0 or x >= img.width or y < 0 or y >= img.height):
-        return (0,0,0)
+
+        pixel = ()
+        
+        #Create a 0 pixel with the same length as the mode
+        for i in range(len(self.image.mode)):
+            pixel+=(0,)
+
+
+        return pixel
+
+    #If its within coordinates
     else:
         return img.pixels[x,y]
 
+
+#Circular padding function
 def circular_padding(x,y,img):
+
+    #Returns the pixel within the range of the image
     return img.pixels[x%img.width, y%img.height]
 
+
+#Reflected padding function
 def reflected_padding(x,y,img):
 
+    #Determine whether the coordinates are an even or odd number of instances away
     x_mod = (x//img.width)%2
     y_mod = (y//img.height)%2
 
+    #If x doesnt need to be inverted
     if x_mod == 0:
         x = x % img.width
+
+    #If x needs to be inverted
     else:
         x = img.width - (x % img.width) - 1
 
+    #If y doesnt need to be inverted
     if y_mod == 0:
         y = y % img.height
+
+    #If y needs to be inverted
     else:
         y = img.height - (y % img.height) - 1 
 
+    #Return pixel
     return img.pixels[x,y]
 
+
+#Image class, used for all image handling within this program
 class Image:
 
+    #Innit function is able to handle: Filename or high/width
+    #Filename loads an image in from the files
+    #Height/Width creates a blank image with the same length and height, defaults to RBG
     def __init__(self, fileName=None, padding=zero_padding, height = None, width = None):
 
-        # self.fileName = fileName
-
+        #If filename is given
         if fileName != None:
             self.image = PILImage.open(fileName)
             self.pixels = self.image.load()
             self.width, self.height = self.image.size
 
+        #If height/width is given
         elif height != None and width != None:
             self.image = PILImage.new('RGB', (width,height))
             self.pixels = self.image.load()
             self.width = width
             self.height = height
         
+        #Set padding
         self.padding = padding
 
+    #Call padding function
     def get_pixel(self, x, y):
         return self.padding(x, y, self)
 
+    #Set pixel value
     def set_pixel(self,x,y,pixel_intensity):
         self.pixels[x,y] = pixel_intensity
 
+    #Unused function which changes one index within the pixel tuple
     def set_pixel_color(self,x,y,pixel_intensity,i):
         temp = list(self.pixels[x,y])
         temp[i] = pixel_intensity
         self.pixels[x,y] = tuple(temp)
 
+    #Create a new blank image with the same size as the current
     def copy_blank(self):
-        new_image = Image(height = self.height, width = self.width)
+        new_image = Image(height = self.height, width = self.width, padding = self.padding)
         return new_image
 
+    #Create a new image with all the same information as the old one
+    #Unimplemented in any other parts of code
     def copy_info(self,new):
 
         self.image = new.image
@@ -102,37 +141,53 @@ class Image:
         self.pixels = new.pixels
         self.padding = new.padding
 
+
+    #Function which flips current image horizontally
     def flip_horizontally(self):
 
+        #Create a copy of the image
         new_image = self.copy_blank()
 
+        #Loop through every pixel
         for i in range(self.width):
             for j in range(self.height):
 
+                #Invert the image along the x axis
                 new_image.set_pixel(self.width - i - 1, j, self.get_pixel(i,j))
 
+        #Copy new image back to the original 
         self.copy_info(new_image)
 
+    #Function which flips image vertically
     def flip_veritcally(self):
 
+        #Create a copy of the image
         new_image = self.copy_blank()
 
+        #Loop through every pixel
         for i in range(self.width):
             for j in range(self.height):
 
+                #Invert the image on the y axis
                 new_image.set_pixel(i, self.height - j - 1, self.get_pixel(i,j))
 
+        #Copy image back to original
         self.copy_info(new_image)
     
+
+    #Function which crops an image using two sets of coordinate
     def crop(self,x1,y1,x2,y2):
 
-        new_image = Image(height = y2-y1, width = x2-x1)
+        #Create a new image with the size of the new image
+        new_image = Image(padding = self.padding, height = y2-y1, width = x2-x1)
 
-
+        #Loop through every pixel in the new image
         for i in range(x2-x1):
             for j in range(y2-y1):
+                #Set the current pixel to the relative pixel in the original image
                 new_image.set_pixel(i,j,self.get_pixel(x1 + i, y1 + j))
 
+        #Copy image back
         self.copy_info(new_image)
 
     def scale_nearest_neighbour(self,x_factor,y_factor):
@@ -140,7 +195,7 @@ class Image:
         new_height = floor(y_factor * self.height)
         new_width = floor(x_factor * self.width)
 
-        new_image = Image(height = new_height, width = new_width)
+        new_image = Image(height = new_height, width = new_width, padding = self.padding)
 
         for i in range(new_image.width):
             for j in range(new_image.height):
@@ -166,7 +221,7 @@ class Image:
         new_height = floor(y_factor * self.height)
         new_width = floor(x_factor * self.width)
 
-        new_image = Image(height = new_height, width = new_width)
+        new_image = Image(padding = self.padding, height = new_height, width = new_width)
 
         for i in range(new_image.width):
             for j in range(new_image.height):
@@ -424,26 +479,131 @@ class Image:
 
 
 
-temp = Image(fileName = "./sam.jpg",padding = reflected_padding)
+# temp = Image(fileName = "./biden.png",padding = reflected_padding)
 
 
-#temp.scale_nearest_neighbour(0.19,0.19)
+#temp.scale_nearest_neighbour(3,4)
 #temp.scale_bilinear(0.19,0.19)
 #temp.negative()
 #temp.power_mapping(1,0.5)
 #temp.filter_median(5,5)
-temp.negative()
+#temp.negative()
 
-temp.equalize_histogram()
+#temp.equalize_histogram()
+
+# temp.crop(150,100,400,400)
+# temp.equalize_histogram()
+# temp.negative()
+# temp.crop(-500,-500,500,500)
+# temp.scale_bilinear(0.1,0.1)
+# temp.crop(-500,-500,500,500)
+
+#temp.crop(-200,-200,500,500)
+user_choice = -1
+image = None
+
+while(user_choice != 10):    
+
+    print("Image Processing App")
+    print("1. Open an image")
+    print("2. Save the image")
+    print("3. Display image")
+    print("4. Padding type")
+    print("5. Crop")
+    print("6. Flip")
+    print("7. Scale")
+    print("8. Negative")
+    print("9. Non-linear Filtering")
+    print("10. Linear Mapping")
+    print("11. Power Mapping")
+    print("12. Hstogram equalization")
+    print("13. Kernel Convolution")
 
 
-array = [[-1,-1,-1],[0,0,0],[1,1,1]]
+    user_input = input("Enter an option: ")
 
-kernel = Kernel(array)
+    try:
+        user_choice = int(user_input)
+    except:
+        print("ERROR: Invalid input, try again")
+
+
+    if(user_choice == 1):
+
+        fileName = input("Enter filename: ")
+        
+        try:
+            image = Image(fileName = fileName)
+            print("Image loaded")
+
+        except:
+            print("ERROR: Unable to open file")
+            input()
+            continue
+
+    if(image == None and (user_choice != 12 or user_choice != 1)):
+        print("ERROR: Cannot perform operartion with no image")
+        input()
+        continue
+
+    if(user_choice == 2):
+
+        fileName = input("Enter filename: ")
+
+        try: 
+            image.image.save(fileName)
+            print("Image saved")
+
+        except:
+            print("ERROR: Unable to save image")
+
+    if(user_choice == 3):
+        image.image.show()
+
+    if(user_choice == 4):
+
+
+        print("1. Zero Padding")
+        print("2. Circular Padding")
+        print("3. Reflect Padding")
+        user_input = input("Choose an option:")
+
+        try: 
+            padding_choice = int(user_input)
+
+        except:
+            print("ERROR: Invalid input")
+            continue
+
+        if(padding_choice == 1):
+            image.padding = zero_padding
+        
+        elif(padding_choice == 2):
+            image.padding = circular_padding
+
+        elif(padding_choice == 3):
+            image.padding = reflected_padding
+
+        else:
+            print("ERROR: Invalid number")
+
+
+    input()
+
+
+
+
+
+
+
+
+# array = [[-1,-1,-1],[0,0,0],[1,1,1]]
+# kernel = Kernel(array)
+# #temp.filter_min(5,5)
 
 #kernel.convulve(temp)
 
 
-temp.image.show()
+# temp.image.show()
 
-temp.image.save("temp.jpg")
+# temp.image.save("temp.jpg")
