@@ -47,8 +47,6 @@ def zero_padding(x,y,img):
         for i in range(len(img.image.mode)):
             pixel = pixel + (0,)
 
-        print(pixel)
-
         return pixel
 
     #If its within coordinates
@@ -96,7 +94,7 @@ class Image:
     #Innit function is able to handle: Filename or high/width
     #Filename loads an image in from the files
     #Height/Width creates a blank image with the same length and height, defaults to RBG
-    def __init__(self, fileName=None, padding=zero_padding, height = None, width = None):
+    def __init__(self, fileName=None, padding=zero_padding, height = None, width = None, mode = None):
 
         #If filename is given
         if fileName != None:
@@ -105,8 +103,8 @@ class Image:
             self.width, self.height = self.image.size
 
         #If height/width is given
-        elif height != None and width != None:
-            self.image = PILImage.new('RGB', (width,height))
+        elif height != None and width != None and mode != None:
+            self.image = PILImage.new(mode, (width,height))
             self.pixels = self.image.load()
             self.width = width
             self.height = height
@@ -114,24 +112,34 @@ class Image:
         #Set padding
         self.padding = padding
 
+
+
     #Call padding function
     def get_pixel(self, x, y):
         return self.padding(x, y, self)
+
+
 
     #Set pixel value
     def set_pixel(self,x,y,pixel_intensity):
         self.pixels[x,y] = pixel_intensity
 
-    #Unused function which changes one index within the pixel tuple
+
+
+    #function which changes one index within the pixel tuple
     def set_pixel_color(self,x,y,pixel_intensity,i):
         temp = list(self.get_pixel(x,y))
         temp[i] = pixel_intensity
         self.pixels[x,y] = tuple(temp)
 
+
+
     #Create a new blank image with the same size as the current
     def copy_blank(self):
-        new_image = Image(height = self.height, width = self.width, padding = self.padding)
+        new_image = Image(height = self.height, width = self.width, padding = self.padding, mode = self.image.mode)
         return new_image
+
+
 
     #Create a new image with all the same information as the old one
     #Unimplemented in any other parts of code
@@ -144,10 +152,12 @@ class Image:
         self.padding = new.padding
 
 
+
+
     #Function which flips current image horizontally
     def flip_horizontally(self):
 
-        #Create a copy of the image
+        #Careate a copy of the image
         new_image = self.copy_blank()
 
         #Loop through every pixel
@@ -159,6 +169,8 @@ class Image:
 
         #Copy new image back to the original 
         self.copy_info(new_image)
+
+
 
     #Function which flips image vertically
     def flip_veritcally(self):
@@ -177,11 +189,13 @@ class Image:
         self.copy_info(new_image)
     
 
+
+
     #Function which crops an image using two sets of coordinate
     def crop(self,x1,y1,x2,y2):
 
         #Create a new image with the size of the new image
-        new_image = Image(height = y2-y1, width = x2-x1,padding = self.padding)
+        new_image = Image(height = y2-y1, width = x2-x1,padding = self.padding, mode = self.image.mode)
 
         #Loop through every pixel in the new image
         for i in range(x2-x1):
@@ -200,7 +214,7 @@ class Image:
         new_width = floor(x_factor * self.width)
 
         #Create new image with the new height and width
-        new_image = Image(height = new_height, width = new_width, padding = self.padding)
+        new_image = Image(height = new_height, width = new_width, padding = self.padding,mode = self.image.mode)
 
         #Loop through every pixel in the new image
         for i in range(new_image.width):
@@ -237,7 +251,7 @@ class Image:
         new_width = floor(x_factor * self.width)
 
         #create the new image
-        new_image = Image(padding = self.padding, height = new_height, width = new_width)
+        new_image = Image(padding = self.padding, height = new_height, width = new_width,mode = self.image.mode)
 
         #loop through every pixel in the new image
         for i in range(new_image.width):
@@ -260,7 +274,7 @@ class Image:
 
 
                 #For every dimension in the image
-                for k in range(len(self.image.mode)-1):
+                for k in range(len(self.image.mode)):
 
                     #Calculate the weight between 2 sets of 2 points
                     X = (self.get_pixel(x1,y1))[k] * ( 1 - wx) +  (self.get_pixel(x2,y1))[k] * wx
@@ -280,6 +294,8 @@ class Image:
         #Copy image
         self.copy_info(new_image)
     
+
+
 
     #Function which takes an image and performs a max filter operation
     def filter_max(self,x,y):
@@ -332,43 +348,61 @@ class Image:
         for i in range(self.width):
             for j in range(self.height):
 
+                #Get first element as min
                 min = 0
                 for element in self.get_pixel(i,j):
                     min+=element
                 
+                #Create min tuple
                 min_tuple = self.get_pixel(i,j)
 
+
+                #Loop through all neighbouring pixels
                 for k in range(floor(-x/2), ceil(x/2)):
                     for l in range(floor(-y/2),ceil(y/2)):
 
+                        
                         temp = 0
                         temp_tuple = self.get_pixel(i+k,j+l)
 
+                        #Sum all channels
                         for element in temp_tuple:
                             temp+=element
 
+                        #If current pixel is less than current mim
                         if temp < min:
                             min = temp
                             min_tuple = temp_tuple
                 
+                #Set current pixel to min
                 temp_image.set_pixel(i,j,min_tuple)
 
+        #Copy info back
         self.copy_info(temp_image)
 
+
+
+
+    #Filter median function which applied a median filter to an image
     def filter_median(self,x,y):
 
+        #Create temp new image
         temp_image = self.copy_blank()
 
+        #Loop through every pixel
         for i in range(self.width):
             for j in range(self.height):
 
+                #Create empty list of tuples
                 tuple_list = []
-                
+
+                #Get every pixel within distance
                 for k in range(floor(-x/2), ceil(x/2)):
                     for l in range(floor(-y/2),ceil(y/2)):
 
                         tuple_list.append(self.get_pixel(i+k,j+l))
-                
+
+                #Create new pixel                
                 new_pixel = ()
 
                 for k in range(len(self.image.mode)):
@@ -519,359 +553,3 @@ class Image:
                 self.set_pixel(i,j,new_pixel)
 
 
-
-
-
-# temp = Image(fileName = "./biden.png",padding = reflected_padding)
-
-
-#temp.scale_nearest_neighbour(3,4)
-#temp.scale_bilinear(0.19,0.19)
-#temp.negative()
-#temp.power_mapping(1,0.5)
-#temp.filter_median(5,5)
-#temp.negative()
-
-#temp.equalize_histogram()
-
-# temp.crop(150,100,400,400)
-# temp.equalize_histogram()
-# temp.negative()
-# temp.crop(-500,-500,500,500)
-# temp.scale_bilinear(0.1,0.1)
-# temp.crop(-500,-500,500,500)
-
-#temp.crop(-200,-200,500,500)
-user_choice = -1
-image = None
-
-print("The Image Processing App")
-
-
-#Loop for user prompts
-while(user_choice != 18):    
-
-    #print options
-    print("1. Open an image")
-    print("2. Save the image")
-    print("3. Display image")
-    print("4. Padding type")
-    print("5. Crop")
-    print("6. Flip horizontally")
-    print("7. Flip vertically")
-    print("8. Scale Nearest Neighbour")
-    print("9. Scale bilinear")
-    print("10. Negative")
-    print("11. Min Filter")
-    print("12. Max Filter")
-    print("13. Median filter")
-    print("14. Linear Mapping")
-    print("15. Power Mapping")
-    print("16. Hstogram equalization")
-    print("17. Kernel Convolution")
-    print("18. Quit")
-
-
-    #Prompt user
-    user_input = input("Enter an option: ")
-
-    #convert input to an integer
-    try:
-        user_choice = int(user_input)
-    except:
-        print("ERROR: Invalid input, try again")
-        input()
-        continue
-
-    #If they're openeing a file
-    if(user_choice == 1):
-
-        fileName = input("Enter filename: ")
-        
-        #Try to open
-        try:
-            image = Image(fileName = fileName)
-            print("Image loaded")
-
-        #If it fails
-        except:
-            print("ERROR: Unable to open file")
-            input()
-            continue
-
-    #If an image hasnt been uploaded yet 
-    if(image == None and (user_choice != 12 or user_choice != 1)):
-        print("ERROR: Cannot perform operartion with no image")
-        input()
-        continue
-
-    #IF save option is picked
-    if(user_choice == 2):
-
-        fileName = input("Enter filename: ")
-
-        #Attempt to save
-        try: 
-            image.image.save(fileName)
-            print("Image saved")
-
-        #If it couldnt be saved
-        except:
-            print("ERROR: Unable to save image")
-
-    #display image
-    if(user_choice == 3):
-        image.image.show()
-        print("Image displayed")
-
-
-    #If user is changing padding types
-    if(user_choice == 4):
-
-        #Prompt user
-        print("1. Zero Padding")
-        print("2. Circular Padding")
-        print("3. Reflect Padding")
-        user_input = input("Choose an option: ")
-
-        try: 
-            padding_choice = int(user_input)
-
-        except:
-            print("ERROR: Invalid input")
-            continue
-
-        #Set padding to current type
-        if(padding_choice == 1):
-            image.padding = zero_padding
-        
-        elif(padding_choice == 2):
-            image.padding = circular_padding
-
-        elif(padding_choice == 3):
-            image.padding = reflected_padding
-
-        #If invalid numbers entered
-        else:
-            print("ERROR: Invalid number")
-            input()
-            continue
-
-        #Print confirmation
-        print("Padding type set")
-
-    #If user is cropping
-    if(user_choice == 5):
-
-        #Get first set of coordinates
-        print("First position")
-        str_x1 = input("Enter x coordinate: ")
-        str_y1 = input("Enter y coordinate: ")
-        print()
-
-        #Get second set of coordinates
-        print("Second position")
-        str_x2 = input("Enter x coordinate: ")
-        str_y2 = input("Enter y coordinate: ")
-
-        try:
-            #Convert each input to integer
-            x1 = int(str_x1)
-            x2 = int(str_x2)
-            y1 = int(str_y1)
-            y2 = int(str_y2)
-
-            #Crop the image
-            image.crop(x1,y1,x2,y2)
-            print("Image cropped successfully")
-
-        #If the conversions fail
-        except: 
-            print("ERROR: Invalid input")
-            input()
-            continue
-
-    #If user is flipping
-    if(user_choice==6):
-        image.flip_horizontally()
-        print("Image flipped")
-
-    #If user is flipping
-    if(user_choice == 7):
-        image.flip_veritcally()
-        print("Image flipped")
-
-    #If user is scaling
-    if(user_choice == 8):
-
-        x_str = input("Enter x factor: ")
-        y_str = input("Enter y factor: ")
-    
-        try:
-            x = float(x_str)
-            y = float(y_str)
-
-            image.scale_nearest_neighbour(x,y)
-            print("Image scaled")
-
-        except:
-            print("ERROR: Invalid input")
-            input()
-            continue
-
-    #If user is scaling
-    if(user_choice == 9):
-
-        #Prompt user
-        x_str = input("Enter x factor: ")
-        y_str = input("Enter y factor: ")
-    
-        #Try to scale image
-        try:
-            x = float(x_str)
-            y = float(y_str)
-
-            image.scale_bilinear(x,y)
-            print("Image scaled")
-
-        #If errors encountered
-        except:
-            print("ERROR: Invalid input")
-            input()
-            continue
-
-    #If user is taking negative
-    if(user_choice == 10):
-        image.negative()
-        print("Negative filter applied")
-
-    #If min filter is being applied 
-    if(user_choice == 11):
-
-        #Get distance
-        dist_str = input("Enter distance: ")
-
-        #Try to apply filter
-        try:
-            dist = int(dist_str)
-            filter_min(dist*2 + 1, dist*2 + 1)
-            print("Min filter applied")
-
-        #If input was invalid
-        except:
-            print("ERROR: Invalid input")
-            input()
-            continue
-
-
-    #If max filter is being applied 
-    if(user_choice == 12):
-
-        #Get distance
-        dist_str = input("Enter distance: ")
-
-        #Try to apply filter
-        try:
-            dist = int(dist_str)
-            filter_max(dist*2 + 1, dist*2 + 1)
-            print("Max filter applied")
-
-        #If input was invalid
-        except:
-            print("ERROR: Invalid input")
-            input()
-            continue
-
-    #If median filter is being applied 
-    if(user_choice == 13):
-
-        #Get distance
-        dist_str = input("Enter distance: ")
-
-        #Try to apply filter
-        try:
-            dist = int(dist_str)
-            filter_median(dist*2 + 1, dist*2 + 1)
-            print("Median filter applied")
-
-        #If input was invalid
-        except:
-            print("ERROR: Invalid input")
-            input()
-            continue
-
-    #If they want linear mapping
-    if(user_choice == 14):
-
-        #Prompt user
-        coeff_str = input("Enter coefficient: ")
-        const_str = input("Enter constant: ")
-
-        #Try to apply filter
-        try: 
-            coeff = float(coeff_str)
-            const = float(const_str)
-
-            image.linear_mapping(coeff, const)
-            print("Linear mapping applied")
-
-        except:
-            print("ERROR: Invalid input")
-            input()
-            continue
-
-
-    #If they want Power mapping
-    if(user_choice == 15):
-
-        #Prompt user
-        exp_str = input("Enter exponent: ")
-        const_str = input("Enter coefficient: ")
-
-        #Try to apply filter
-        try: 
-            exponent = float(exp_str)
-            const = float(const_str)
-
-            image.power_mapping(exponent, const)
-            print("Power mapping applied")
-
-        except:
-            print("ERROR: Invalid input")
-            input()
-            continue
-
-    #If user wants to equalize histogram
-    if(user_choice == 16):
-        image.equalize_histogram()
-        print("Equalization applied")
-
-    #If user wants to apply convolution
-    if(user_choice == 17):
-
-        print()
-
-
-    #If user devices to quit
-    if(user_choice == 18):
-        break
-
-    input()
-
-
-
-
-
-
-
-
-# array = [[-1,-1,-1],[0,0,0],[1,1,1]]
-# kernel = Kernel(array)
-# #temp.filter_min(5,5)
-
-#kernel.convulve(temp)
-
-
-# temp.image.show()
-
-# temp.image.save("temp.jpg")
